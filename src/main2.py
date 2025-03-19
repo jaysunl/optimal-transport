@@ -5,22 +5,19 @@ from datasets import load_dataset
 from scipy.stats import spearmanr
 from sklearn.metrics.pairwise import cosine_distances
 
-# Load BERT tokenizer and model
 tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 model = BertModel.from_pretrained("bert-base-uncased")
 
-# Function to get word embeddings using BERT
 def get_word_embeddings(sentence):
     tokens = tokenizer(sentence, return_tensors="pt", padding=True, truncation=True)
     with torch.no_grad():
         outputs = model(**tokens)
     embeddings = outputs.last_hidden_state.squeeze(0).numpy()
-    return embeddings[1:-1]  # Exclude [CLS] and [SEP] tokens
+    return embeddings[1:-1]  
 
-# Interior-point OT solver (simplified)
 def interior_point_ot(C, mu, nu, tol=1e-6, max_iter=100, alpha=0.95):
     n, m = C.shape
-    T = np.ones((n, m)) / (n * m)  # Initialize transport plan
+    T = np.ones((n, m)) / (n * m) 
     u = np.zeros(n)
     v = np.zeros(m)
 
@@ -48,7 +45,6 @@ def interior_point_ot(C, mu, nu, tol=1e-6, max_iter=100, alpha=0.95):
 
     return T
 
-# Function to compute sentence similarity using OT
 def compute_sentence_similarity(sentence1, sentence2):
     emb1 = get_word_embeddings(sentence1)
     emb2 = get_word_embeddings(sentence2)
@@ -63,10 +59,8 @@ def compute_sentence_similarity(sentence1, sentence2):
     
     return wasserstein_distance
 
-# Load the STS Benchmark dataset
-dataset = load_dataset("stsb_multi_mt", "en")  # Use the test split for evaluation
+dataset = load_dataset("stsb_multi_mt", "en")  
 
-# Calculate the OT distance for each sentence pair
 predicted_distances = []
 true_scores = []
 train_data = dataset["train"]
@@ -75,13 +69,11 @@ for example in train_data:
     sentence2 = example['sentence2']
     true_score = example['similarity_score']
     
-    # Compute OT distance (Wasserstein distance)
     distance = compute_sentence_similarity(sentence1, sentence2)
     
     predicted_distances.append(distance)
     true_scores.append(true_score)
     break
-# Compute Spearman correlation between the predicted distances and the true scores
 print(predicted_distances)
 print(true_scores)
 spearman_corr, _ = spearmanr(predicted_distances, true_scores)
